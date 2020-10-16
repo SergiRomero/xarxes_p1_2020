@@ -1,7 +1,7 @@
 import socket
 import select
 
-IP = "127.0.0.1"
+IP = "192.168.1.48"
 PORT = 1234
 
 
