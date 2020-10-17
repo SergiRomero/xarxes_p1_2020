@@ -21,8 +21,12 @@ def save_new_client(socket, username, client_address):
     
     sockets_list.append(socket)
     clients[socket] = username # Save client data
+
     print("Accepted new conection from ", client_address," by ", clients[socket])
-    socket.send(str.encode("Wellcome " + username + " to the chat room!"))
+
+    socket.send(str.encode("SERVER : Wellcome " + username + " to the chat room!\nSERVER : " + ', '.join(str(username) for username in list(clients.values())) + " are online now!"))
+
+    resend_to_all_clients(socket, "SERVER : " + username + " joined the room")
 
 # 
 #   Removes given client from registered sockets and client data
@@ -30,6 +34,7 @@ def save_new_client(socket, username, client_address):
 def unsubscribe_client(client_socket):
     
     print("Close conection from " + clients[client_socket])
+    resend_to_all_clients(client_socket, "SERVER : " + clients[client_socket] + " left the room ;(")
     sockets_list.remove(client_socket)
     del clients[client_socket]
 
@@ -39,16 +44,16 @@ def unsubscribe_client(client_socket):
 #
 def out_message(client_socket, message):
 
-    return clients[recived_socket] + ": " + message
+    return clients[recived_socket] + " : " + message
 
 #
 #   Sends a given message to all clients except for a given (who send the message)
 #
-def resend_to_all_clients(recived_socket, message):
+def resend_to_all_clients(sender_socket, message):
 
     for client_socket in clients:
-        if client_socket != recived_socket:
-            client_socket.send(str.encode(out_message(recived_socket, message)))
+        if client_socket != sender_socket:
+            client_socket.send(str.encode(message))
 
 
 #
@@ -80,7 +85,7 @@ def handle_message(recived_socket):
     print("Recived message >> " + out_message(recived_socket, message))
 
     # Send recived message to other clients
-    resend_to_all_clients(recived_socket, message)
+    resend_to_all_clients(recived_socket, out_message(recived_socket, message))
 
 
 #
