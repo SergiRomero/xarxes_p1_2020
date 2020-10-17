@@ -4,28 +4,29 @@ import select
 IP = "192.168.1.48"     # Server ip
 PORT = 1234             # Server port
 
-"""
-    Recives and returns a message from specified socket
-"""
+#
+#   Recives and returns a message from specified socket
+#
 def recive_message (client_socket):
     try:
         message = client_socket.recv(1024)
-        return message
+        return message.decode()
     except:
         return False
 
-"""
-    Register a new client. Stores socket to resend messages and client data
-"""
-def save_new_client(scoket, username):
+#
+#   Register a new client. Stores socket to resend messages and client data
+#
+def save_new_client(socket, username, client_address):
     
-    sockets_list.append(scoket)
-    clients[scoket] = username # Save client data
-    print("Accepted new conection from ", clients[scoket])
+    sockets_list.append(socket)
+    clients[socket] = username # Save client data
+    print("Accepted new conection from ", client_address," by ", clients[socket])
+    socket.send(str.encode("Wellcome " + username + " to the chat room!"))
 
-"""
-    Removes given client from registered sockets and client data
-"""
+# 
+#   Removes given client from registered sockets and client data
+# 
 def unsubscribe_client(client_socket):
     
     print("Close conection from " + clients[client_socket])
@@ -33,16 +34,16 @@ def unsubscribe_client(client_socket):
     del clients[client_socket]
 
 
-"""
-    Message view to be returned to clients
-"""
+#
+#   Message view to be returned to clients
+#
 def out_message(client_socket, message):
 
     return clients[recived_socket] + ": " + message
 
-"""
-    Sens a given message to all clients except for a given (who send the message)
-"""
+#
+#   Sends a given message to all clients except for a given (who send the message)
+#
 def resend_to_all_clients(recived_socket, message):
 
     for client_socket in clients:
@@ -50,13 +51,9 @@ def resend_to_all_clients(recived_socket, message):
             client_socket.send(str.encode(out_message(recived_socket, message)))
 
 
-
-
-
-
-"""
-    Accepts socket and register new client
-"""
+#
+#   Accepts socket and register new client
+#
 def handle_new_client(recived_socket):
 
     client_socket, client_address = server_socket.accept()
@@ -65,35 +62,34 @@ def handle_new_client(recived_socket):
     if not message:
         return
 
-    save_new_client(client_socket, message.decode())
+    save_new_client(client_socket, message, client_address)
 
 
-"""
-    Reads recieved message and resends it to all clients
-"""
+#
+#   Reads recieved message and resends it to all clients
+#
 def handle_message(recived_socket):
+
     message = recive_message(recived_socket)
 
     if not message:
+        # Empty socket means conection closed by client
         unsubscribe_client(recived_socket)
         return
     
-    print("Recived message from " + out_message(recived_socket, message.decode()))
+    print("Recived message >> " + out_message(recived_socket, message))
 
     # Send recived message to other clients
-    resend_to_all_clients(recived_socket, message.decode())
+    resend_to_all_clients(recived_socket, message)
 
 
-
-
-
-"""
-=================================================================
-
-                            MAIN
-
-=================================================================
-"""
+#
+#=================================================================
+#
+#                           MAIN
+#
+#=================================================================
+#
 
 #Init socket
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -106,7 +102,7 @@ print("Listening on ", (IP, PORT))
 
 # Client data
 sockets_list = [server_socket]
-clients = {} #{socket: user_data}
+clients = {} #{socket: username}
 
 while True:
 
